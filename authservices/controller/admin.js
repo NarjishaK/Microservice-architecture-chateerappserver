@@ -6,9 +6,8 @@ const nodemailer = require('nodemailer');
 const twilio = require('twilio');
 const crypto = require('crypto');
 const Redis = require('ioredis');
-const redis = new Redis(); // Connects to Redis running locally on default port 6379
-
-const OTP_EXPIRY = 60; // 1 minutes in seconds
+const redis = new Redis(); 
+const OTP_EXPIRY = 60; 
 
 // Twilio configuration
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -203,7 +202,6 @@ exports.sendOTP = async (req, res) => {
     }
 }
 
-//verify otp
 
 // Verify OTP (Check Redis)
 exports.verifyOTP = async (req, res) => {
