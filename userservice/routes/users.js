@@ -1,9 +1,20 @@
 var express = require('express');
 var router = express.Router();
+const Controller = require('../controller/user');
+const multer = require('multer');
 
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'public/images');
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname);
+    },
 });
 
+const upload = multer({ storage: storage });
+
+
+//get all users
+router.get('/', Controller.getAllUsers);
 module.exports = router;
