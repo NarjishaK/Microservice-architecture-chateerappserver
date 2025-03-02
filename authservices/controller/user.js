@@ -23,6 +23,8 @@ const transporter = nodemailer.createTransport({
 // Generate a 6-digit OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
+
+
 // Function to generate unique userId
 const generateUserId = async () => {
     const lastUser = await User.findOne().sort({ userId: -1 }).select('userId'); // Get the highest userId
@@ -189,25 +191,7 @@ exports.loginUser = async (req, res) => {
     }
 };
 
-
-//forget password by email or phone
-exports.forgetPassword = async (req, res) => {
-    try {
-        const { email, phone } = req.body;
-        const user = await User.findOne({ $or: [{ email }, { phone }] });
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        res.status(200).json({ message: 'Password reset link sent successfully' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-};
-
-/**
- * Send OTP via Email or SMS
- */
+//Send OTP via Email or SMS
 exports.sendOTP = async (req, res) => {
     try {
         const { email, phone } = req.body;
@@ -218,19 +202,19 @@ exports.sendOTP = async (req, res) => {
         }
 
         const otp = generateOTP();
-        otpStore[user.userId] = { otp, expiresAt: Date.now() + 5 * 60 * 1000 }; // OTP valid for 5 mins
+        otpStore[user.userId] = { otp, expiresAt: Date.now() + 1 * 60 * 1000 }; // OTP valid for 1 mins
 
         if (email) {
             await transporter.sendMail({
                 from: '"Your App" <your-email@gmail.com>',
                 to: email,
                 subject: 'Your OTP Code',
-                text: `Your OTP code is: ${otp}. It is valid for 5 minutes.`
+                text: `Your OTP code is: ${otp}. It is valid for 1 minutes.`
             });
             return res.status(200).json({ message: 'OTP sent to email' });
         } else if (phone) {
             await twilioClient.messages.create({
-                body: `Your OTP code is: ${otp}. It is valid for 5 minutes.`,
+                body: `Your OTP code is: ${otp}. It is valid for 1 minutes.`,
                 from: TWILIO_PHONE_NUMBER,
                 to: phone
             });
@@ -244,9 +228,7 @@ exports.sendOTP = async (req, res) => {
     }
 };
 
-/**
- * Verify OTP
- */
+//Verify OTP
 exports.verifyOTP = async (req, res) => {
     try {
         const { userId, otp } = req.body;
@@ -274,9 +256,7 @@ exports.verifyOTP = async (req, res) => {
     }
 };
 
-/**
- * Reset Password
- */
+//Reset Password
 exports.resetPassword = async (req, res) => {
     try {
         const { userId, newPassword } = req.body;

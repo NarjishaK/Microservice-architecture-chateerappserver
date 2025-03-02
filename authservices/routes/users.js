@@ -36,8 +36,6 @@ router.delete('/:id', Controller.deleteUserById);
 router.delete('/', Controller.deleteAllUsers);
 
 //forget password by email or phone
-router.post('/forget-password', Controller.forgetPassword);
-
 router.post('/send-otp', Controller.sendOTP);
 router.post('/verify-otp', Controller.verifyOTP);
 router.post('/reset-password', Controller.resetPassword);
