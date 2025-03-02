@@ -1,0 +1,50 @@
+# Node.js dependencies
+node_modules/
+package-lock.json
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+debug.log*
+stacktrace.log
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Build files
+dist/
+build/
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# API Gateway & Microservices specific
+api-gateway/node_modules/
+api-gateway/.env
+authservices/node_modules/
+authservices/.env
+userservice/node_modules/
+userservice/.env
+
+
+# Docker & Deployment
+# docker-compose.override.yml
+# docker-compose.debug.yml
+# docker-compose.prod.yml
+# .dockerignore
+
+# Miscellaneous
+coverage/
