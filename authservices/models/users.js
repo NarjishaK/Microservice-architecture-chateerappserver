@@ -30,8 +30,6 @@ const userSchema = new mongoose.Schema({
     isActive: { type: Boolean, default: true },
     isBlocked: { type: Boolean, default: false },
     isReported: { type: Boolean, default: false },
-    isAdmin: { type: Boolean, default: false },
-    role: { type: String, default: 'user' }
 });
 
 // Hash password before saving
