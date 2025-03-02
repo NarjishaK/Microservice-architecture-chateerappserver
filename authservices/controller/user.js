@@ -1,35 +1,55 @@
 const User = require('../models/users');
 const bcrypt = require('bcrypt');
-const { v4: uuidv4 } = require('uuid');
+
+// Function to generate unique userId
+const generateUserId = async () => {
+    const lastUser = await User.findOne().sort({ userId: -1 }).select('userId'); // Get the highest userId
+
+    let newIdNumber = 1; // Default if no users exist
+
+    if (lastUser && lastUser.userId) {
+        const lastIdNumber = parseInt(lastUser.userId.substring(2)); // Extract numeric part
+        newIdNumber = lastIdNumber + 1; // Increment
+    }
+
+    return `CA${newIdNumber.toString().padStart(6, '0')}`; // Format with leading zeros
+};
 
 // Create user
 exports.createUser = async (req, res) => {
     try {
         const { name, email, phone, password, ...otherFields } = req.body;
-        const image=req.file.filename;
-        // Validate required fields
+        const image = req.file ? req.file.filename : null;
+
         if (!name || !email || !phone || !password) {
             return res.status(400).json({ error: 'Name, email, phone, and password are required' });
         }
 
-        // Check if email or phone already exists
         const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
         if (existingUser) {
             return res.status(400).json({ error: 'Email or phone already exists' });
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create new user
+        let userId;
+        let isDuplicate = true;
+        while (isDuplicate) {
+            userId = await generateUserId();
+            const existingId = await User.findOne({ userId }); // Check if userId already exists
+            if (!existingId) {
+                isDuplicate = false;
+            }
+        }
+
         const newUser = new User({
-            userId: uuidv4(),
+            userId,
             name,
             email,
             phone,
             password: hashedPassword,
             ...otherFields,
-            image: image
+            image
         });
 
         await newUser.save();
