@@ -2,6 +2,26 @@ const User = require('../models/users');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
+const nodemailer = require('nodemailer');
+const twilio = require('twilio');
+const crypto = require('crypto');
+
+const otpStore = {}; // Temporary OTP storage (Consider Redis for production)
+
+// Twilio configuration
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+const TWILIO_PHONE_NUMBER = process.env.TWILIO_PHONE_NUMBER;
+
+// Nodemailer configuration
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
+// Generate a 6-digit OTP
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // Function to generate unique userId
 const generateUserId = async () => {
@@ -179,6 +199,98 @@ exports.forgetPassword = async (req, res) => {
             return res.status(404).json({ error: 'User not found' });
         }
         res.status(200).json({ message: 'Password reset link sent successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+/**
+ * Send OTP via Email or SMS
+ */
+exports.sendOTP = async (req, res) => {
+    try {
+        const { email, phone } = req.body;
+        const user = await User.findOne({ $or: [{ email }, { phone }] });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const otp = generateOTP();
+        otpStore[user.userId] = { otp, expiresAt: Date.now() + 5 * 60 * 1000 }; // OTP valid for 5 mins
+
+        if (email) {
+            await transporter.sendMail({
+                from: '"Your App" <your-email@gmail.com>',
+                to: email,
+                subject: 'Your OTP Code',
+                text: `Your OTP code is: ${otp}. It is valid for 5 minutes.`
+            });
+            return res.status(200).json({ message: 'OTP sent to email' });
+        } else if (phone) {
+            await twilioClient.messages.create({
+                body: `Your OTP code is: ${otp}. It is valid for 5 minutes.`,
+                from: TWILIO_PHONE_NUMBER,
+                to: phone
+            });
+            return res.status(200).json({ message: 'OTP sent via SMS' });
+        }
+
+        return res.status(400).json({ error: 'Email or phone is required' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+/**
+ * Verify OTP
+ */
+exports.verifyOTP = async (req, res) => {
+    try {
+        const { userId, otp } = req.body;
+        if (!otpStore[userId]) {
+            return res.status(400).json({ error: 'OTP expired or invalid' });
+        }
+
+        const { otp: storedOtp, expiresAt } = otpStore[userId];
+
+        if (Date.now() > expiresAt) {
+            delete otpStore[userId];
+            return res.status(400).json({ error: 'OTP expired' });
+        }
+
+        if (otp !== storedOtp) {
+            return res.status(400).json({ error: 'Invalid OTP' });
+        }
+
+        delete otpStore[userId]; // OTP verified, remove it from storage
+        return res.status(200).json({ message: 'OTP verified successfully' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+/**
+ * Reset Password
+ */
+exports.resetPassword = async (req, res) => {
+    try {
+        const { userId, newPassword } = req.body;
+        const user = await User.findOne({ userId });
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        res.status(200).json({ message: 'Password reset successfully' });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal Server Error' });
