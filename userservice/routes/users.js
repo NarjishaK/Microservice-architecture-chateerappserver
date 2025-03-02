@@ -17,4 +17,6 @@ const upload = multer({ storage: storage });
 
 //get all users
 router.get('/', Controller.getAllUsers);
+//get user by id
+router.get('/:id', Controller.getUserById);
 module.exports = router;
