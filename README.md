@@ -47,8 +47,8 @@ chatterapp/
 ### Steps to Run Locally
 1. Clone the repository:
    ```sh
-   git clone https://github.com/your-username/chatterapp.git
-   cd chatterapp
+   git clone https://github.com/NarjishaK/chateerappserver.git
+   cd chateerappserver
    ```
 2. Install dependencies for each service:
    ```sh
