@@ -5,6 +5,7 @@ const logger = require('morgan');
 const connectDB = require('./config/db'); // Correct import
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
+const adminRouter = require('./routes/admin');
 const cors = require('cors');
 
 // Connect to database
@@ -28,6 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Routes
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/admin', adminRouter);
 
 const PORT = 5002;
 app.listen(PORT, () => {
