@@ -28,4 +28,9 @@ router.post('/send-otp', Controller.sendOTP);
 router.post('/verify-otp', Controller.verifyOTP);
 router.post('/reset-password', Controller.resetPassword);
 
+//block admin by id
+router.put('/block/:id', Controller.blockAdminById);
+//unblock admin by id
+router.put('/unblock/:id', Controller.unblockAdminById);
+
 module.exports = router;

@@ -248,3 +248,35 @@ exports.resetPassword = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
+
+//block admin by id
+exports.blockAdminById = async (req, res) => {
+    try {
+        const admin = await Admin.findById(req.params.id);
+        if (!admin) {
+            return res.status(404).json({ error: 'Admin not found' });
+        }
+        admin.isBlocked = true;
+        await admin.save();
+        res.status(200).json({ message: 'Admin blocked successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+
+//unblock admin by id
+exports.unblockAdminById = async (req, res) => {
+    try {
+        const admin = await Admin.findById(req.params.id);
+        if (!admin) {
+            return res.status(404).json({ error: 'Admin not found' });
+        }
+        admin.isBlocked = false;
+        await admin.save();
+        res.status(200).json({ message: 'Admin unblocked successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
