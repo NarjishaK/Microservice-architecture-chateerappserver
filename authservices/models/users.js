@@ -30,6 +30,9 @@ const userSchema = new mongoose.Schema({
     isActive: { type: Boolean, default: true },
     isBlocked: { type: Boolean, default: false },
     isReported: { type: Boolean, default: false },
+
+    // List of blocked user IDs
+    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 });
 
 // Hash password before saving

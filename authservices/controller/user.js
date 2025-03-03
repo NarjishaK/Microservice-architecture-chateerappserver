@@ -442,3 +442,62 @@ exports.changePassword = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 }
+
+//Block a User
+exports.blockUser = async (req, res) => {
+    try {
+        const { userId, blockId } = req.body; // userId = blocker, blockId = blocked user
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Check if user is already blocked
+        if (user.blockedUsers.includes(blockId)) {
+            return res.status(400).json({ message: 'User already blocked' });
+        }
+
+        // Add to blockedUsers array
+        user.blockedUsers.push(blockId);
+        await user.save();
+
+        res.status(200).json({ message: 'User blocked successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+
+// Unblock a User
+exports.unblockUser = async (req, res) => {
+    try {
+        const { userId, blockId } = req.body;
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Remove from blockedUsers array
+        user.blockedUsers = user.blockedUsers.filter(id => id.toString() !== blockId);
+        await user.save();
+
+        res.status(200).json({ message: 'User unblocked successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+// Get List of Users Excluding Blocked Ones
+exports. getUsers = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Fetch all users except blocked ones
+        const users = await User.find({ _id: { $nin: user.blockedUsers } });
+
+        res.status(200).json(users);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error });
+    }
+};

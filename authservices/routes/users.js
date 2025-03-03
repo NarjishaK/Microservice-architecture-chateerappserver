@@ -70,4 +70,8 @@ router.put('/inactive/:id', Controller.deactivateUserById);
 //password  change
 router.put('/user/change-password', Controller.changePassword);
 
+router.post('/block',Controller.blockUser);  // Block a user
+router.post('/unblock',Controller.unblockUser);  // Unblock a user
+router.get('/users/:userId', Controller.getUsers); // Get all users except blocked ones
+
 module.exports = router;
