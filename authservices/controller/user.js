@@ -388,3 +388,57 @@ exports.getAllUnreportedUsers = async (req, res) => {
         res.status(500).json({ error: 'Internal Server Error' });
     }
 }
+
+//activate user by id
+exports.activateUserById = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        user.isActive = true;
+        await user.save();
+        res.status(200).json({ message: 'User activated successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+
+//deactivate user by id
+exports.deactivateUserById = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        user.isActive = false;
+        await user.save();
+        res.status(200).json({ message: 'User deactivated successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+
+
+//change password
+exports.changePassword = async (req, res) => {
+    try {
+        const { email, oldPassword, newPassword } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({ error: 'Invalid password' });
+        }
+        user.password = newPassword;
+        await user.save();
+        res.status(200).json({ message: 'Password changed successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+}

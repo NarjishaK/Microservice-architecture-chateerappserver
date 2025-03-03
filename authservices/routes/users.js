@@ -61,4 +61,13 @@ router.get('/reported/users', Controller.getAllReportedUsers);
 //get all unreported users
 router.get('/unreported/users', Controller.getAllUnreportedUsers);
 
+//active user by id
+router.put('/active/:id', Controller.activateUserById);
+
+//inactive user by id
+router.put('/inactive/:id', Controller.deactivateUserById);
+
+//password  change
+router.put('/user/change-password', Controller.changePassword);
+
 module.exports = router;
