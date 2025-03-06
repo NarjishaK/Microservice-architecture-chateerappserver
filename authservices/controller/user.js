@@ -45,13 +45,30 @@ const generateUserId = async () => {
 // Create user
 exports.createUser = async (req, res) => {
     try {
-        const { name, email, phone, password, ...otherFields } = req.body;
+        let { name, email, phone, password, ...otherFields } = req.body;
         const image = req.file ? req.file.filename : null;
 
         if (!name || !email || !phone || !password) {
             return res.status(400).json({ error: 'Name, email, phone, and password are required' });
         }
 
+        if (phone) {
+            // Remove non-digit characters and check the length
+            let cleanedPhone = phone.replace(/\D/g, "");
+            
+            if (cleanedPhone.length > 10) {
+                return res.status(400).json({ error: 'Only 10-digit phone numbers are allowed' });
+            }
+            
+            // Ensure the phone number is exactly 10 digits and prepend "+91 "
+            phone = `+91 ${cleanedPhone}`;
+            
+            // Final validation check
+            if (!/^\+91 \d{10}$/.test(phone)) {
+                return res.status(400).json({ error: 'Phone number must be in the format: "+91 9876543210"' });
+            }
+        }
+        
         const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
         if (existingUser) {
             return res.status(400).json({ error: 'Email or phone already exists' });
@@ -118,8 +135,28 @@ exports.getUserById = async (req, res) => {
 //update user by id
 exports.updateUserById = async (req, res) => {
     try {
-        const { name, email, phone, password, ...otherFields } = req.body;
+        let { name, email, phone, password, ...otherFields } = req.body;
         const image = req.file ? req.file.filename : null;
+
+        if (phone) {
+            // Remove non-digit characters and check the length
+            let cleanedPhone = phone.replace(/\D/g, "");
+            
+            if (cleanedPhone.length > 10) {
+                return res.status(400).json({ error: 'Only 10-digit phone numbers are allowed' });
+            }
+            
+            // Ensure the phone number is exactly 10 digits and prepend "+91 "
+            phone = `+91 ${cleanedPhone}`;
+            
+            // Final validation check
+            if (!/^\+91 \d{10}$/.test(phone)) {
+                return res.status(400).json({ error: 'Phone number must be in the format: "+91 9876543210"' });
+            }
+        }
+        
+        
+
         const user = await User.findByIdAndUpdate(req.params.id, {
             name,
             email,
@@ -166,13 +203,17 @@ exports.deleteAllUsers = async (req, res) => {
 //login user by email or phone and password
 exports.loginUser = async (req, res) => {
     try {
-        const { email, phone, password } = req.body;
-
+        let { email, phone, password } = req.body;
+         
+        // Ensure phone number starts with +91
+        if (phone) {
+            phone = phone.startsWith("+91 ") ? phone : "+91 " + phone.replace(/\D/g, "");
+        }
         const user = await User.findOne({ $or: [{ email }, { phone }] });
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
-
+       
         console.log("User found:",user.name);
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -219,9 +260,14 @@ exports.resetPassword = async (req, res) => {
 //Send OTP (Store in Redis)
 exports.sendOTP = async (req, res) => {
     try {
-        const { email, phone } = req.body;
-        const user = await User.findOne({ $or: [{ email }, { phone }] });
+        let { email, phone } = req.body;
 
+        // Ensure phone number starts with +91
+        if (phone) {
+            phone = phone.startsWith("+91 ") ? phone : "+91 " + phone.replace(/\D/g, "");
+        }
+        const user = await User.findOne({ $or: [{ email }, { phone }] });
+        
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
