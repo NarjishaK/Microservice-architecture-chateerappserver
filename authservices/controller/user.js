@@ -326,59 +326,6 @@ exports.verifyOTP = async (req, res) => {
 };
 
 
-//report user by id
-exports.reportUserById = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        user.isReported = true;
-        await user.save();
-        res.status(200).json({ message: 'User reported successfully' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-}   
-
-//unreport user by id
-exports.unreportUserById = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        user.isReported = false;
-        await user.save();
-        res.status(200).json({ message: 'User unreported successfully' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
-
-//all reported users
-exports.getAllReportedUsers = async (req, res) => {
-    try {
-        const reportedUsers = await User.find({ isReported: true });
-        res.status(200).json(reportedUsers);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
-
-//all unreported users
-exports.getAllUnreportedUsers = async (req, res) => {
-    try {
-        const unreportedUsers = await User.find({ isReported: false });
-        res.status(200).json(unreportedUsers);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
 
 //activate user by id
 exports.activateUserById = async (req, res) => {
@@ -490,5 +437,67 @@ exports. getUsers = async (req, res) => {
         res.status(200).json(users);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error });
+    }
+};
+
+
+// Report a user
+exports.reportUser = async (req, res) => {
+    try {
+        const { reportedUserId,reportingUserId } = req.body;
+
+        if (!reportedUserId) {
+            return res.status(400).json({ message: 'Reported user ID is required' });
+        }
+
+        // Find the reported user
+        const reportedUser = await User.findById(reportedUserId);
+        if (!reportedUser) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Check if the user has already reported this user
+        if (reportedUser.reportedUsers.includes(reportingUserId)) {
+            return res.status(400).json({ message: 'You have already reported this user' });
+        }
+
+        // Add the reporting user to the reportedUsers list
+        reportedUser.reportedUsers.push(reportingUserId);
+        await reportedUser.save();
+
+        // If 15 unique users report this account, delete it
+        if (reportedUser.reportedUsers.length >= 2) {
+            await User.findByIdAndDelete(reportedUserId);
+            return res.status(200).json({ message: 'User account deleted due to multiple reports' });
+        }
+
+        res.status(200).json({ message: 'User reported successfully', totalReports: reportedUser.reportedUsers.length });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+
+// Get reported users with their report count
+exports.getReportedUsers = async (req, res) => {
+    try {
+        // Find all users who have been reported at least once
+        const reportedUsers = await User.find({ reportedUsers: { $exists: true, $ne: [] } })
+            .select('name email reportedUsers') // Selecting only required fields
+            .lean();
+
+        // Format the response with report count
+        const reportedUsersList = reportedUsers.map(user => ({
+            userId: user._id,
+            name: user.name,
+            email: user.email,
+            reportCount: user.reportedUsers.length
+        }));
+
+        res.status(200).json({ reportedUsers: reportedUsersList });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
     }
 };

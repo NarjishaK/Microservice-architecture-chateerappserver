@@ -40,17 +40,6 @@ router.post('/send-otp', Controller.sendOTP);
 router.post('/verify-otp', Controller.verifyOTP);
 router.post('/reset-password', Controller.resetPassword);
 
-//report user by id
-router.put('/report/:id', Controller.reportUserById);
-//unreport user by id
-router.put('/unreport/:id', Controller.unreportUserById);
-
-//get all reported users
-router.get('/reported/users', Controller.getAllReportedUsers);
-
-//get all unreported users
-router.get('/unreported/users', Controller.getAllUnreportedUsers);
-
 //active user by id
 router.put('/active/:id', Controller.activateUserById);
 
@@ -63,5 +52,9 @@ router.put('/user/change-password', Controller.changePassword);
 router.post('/block',Controller.blockUser);  // Block a user
 router.post('/unblock',Controller.unblockUser);  // Unblock a user
 router.get('/users/:userId', Controller.getUsers); // Get all users except blocked ones
+//report multiple user
+router.post('/report/user', Controller.reportUser);
+//get reported user list
+router.get('/reported-users/users', Controller.getReportedUsers); 
 
 module.exports = router;

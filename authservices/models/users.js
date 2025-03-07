@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const { report } = require('../routes/admin');
 
 const userSchema = new mongoose.Schema({
     userId: { type: String, unique: true },
@@ -38,10 +39,9 @@ const userSchema = new mongoose.Schema({
     company: { type: String },
     religion: { type: String },
     isActive: { type: Boolean, default: true },
-    // isBlocked: { type: Boolean, default: false },
-    isReported: { type: Boolean, default: false },
     // List of blocked user IDs
-    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    reportedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 });
 
 // Hash password before saving
