@@ -558,6 +558,10 @@ exports.followUser = async (req, res) => {
         if (userToFollow.blockedUsers && userToFollow.blockedUsers.includes(requesterId)) {
             return res.status(403).json({ message: 'You are blocked by this user' });
         }
+        // Check if user is reported
+        if (userToFollow.reportedUsers && userToFollow.reportedUsers.includes(requesterId)) {
+            return res.status(403).json({ message: 'You are reported by this user' });
+        }
         
         // Check if already following
         if (userToFollow.followers && userToFollow.followers.includes(requesterId)) {
@@ -636,7 +640,7 @@ exports.unfollowUser = async (req, res) => {
 exports.getFollowers = async (req, res) => {
     try {
         const { userId } = req.params;
-        const user = await User.findById(userId).populate('followers', 'name email image');
+        const user = await User.findById(userId).populate('followers');
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -652,7 +656,7 @@ exports.getFollowers = async (req, res) => {
 exports.getFollowing = async (req, res) => {
     try {
         const { userId } = req.params;
-        const user = await User.findById(userId).populate('following', 'name email image');
+        const user = await User.findById(userId).populate('following');
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
@@ -698,11 +702,12 @@ exports.confirmFollowRequest = async (req, res) => {
 //get follow requests
 exports.getFollowRequests = async (req, res) => {
     try {
-        const { userId } = req.params; // The user whose follow requests we want to fetch
+        const { userId } = req.params; 
         
+        // Find the user and populate followRequests with only isPrivet field initially
         const user = await User.findById(userId).populate({
             path: 'followRequests',
-            select: 'name email phone image' // Fetch specific fields
+            select: 'isPrivet' // Initially, only get isPrivet status
         });
 
         if (!user) {
@@ -713,12 +718,33 @@ exports.getFollowRequests = async (req, res) => {
             return res.status(400).json({ message: 'This user account is public' });
         }
 
-        res.status(200).json({ followRequests: user.followRequests });
+        // Now fetch followRequests again based on whether they are private or not
+        const followRequests = await User.find({ _id: { $in: user.followRequests } })
+            .select('isPrivet name email phone image profileFor location gender dob nationality district state about higherEducation course passOutDate profession company religion maritalStatus height weight physicallyChallenged financialStatus')
+            .lean();
+
+        // Modify data to restrict details if requester is private
+        const filteredFollowRequests = followRequests.map(requester => {
+            if (requester.isPrivet) {
+                return {
+                    _id: requester._id,
+                    name: requester.name,
+                    email: requester.email,
+                    phone: requester.phone,
+                    image: requester.image
+                };
+            }
+            return requester; // If public, return all details
+        });
+
+        res.status(200).json({ followRequests: filteredFollowRequests });
+
     } catch (error) {
         console.error('Error fetching follow requests:', error);
         res.status(500).json({ message: 'Internal server error' });
     }
 };
+
 
 
 ////remove pendingfollow request
