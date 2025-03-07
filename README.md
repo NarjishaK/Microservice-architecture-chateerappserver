@@ -91,12 +91,7 @@ To run all services with Docker:
 docker-compose up --build
 ```
 
-## Contributing
-Pull requests are welcome! Follow these steps:
-1. Fork the repository.
-2. Create a new branch.
-3. Make your changes and commit them.
-4. Submit a pull request.
+
 
 ## License
 This project is licensed under the **MIT License**.
