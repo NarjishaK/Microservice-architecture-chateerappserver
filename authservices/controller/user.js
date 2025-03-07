@@ -466,7 +466,7 @@ exports.reportUser = async (req, res) => {
         await reportedUser.save();
 
         // If 15 unique users report this account, delete it
-        if (reportedUser.reportedUsers.length >= 2) {
+        if (reportedUser.reportedUsers.length >= 10) {
             await User.findByIdAndDelete(reportedUserId);
             return res.status(200).json({ message: 'User account deleted due to multiple reports' });
         }
@@ -499,5 +499,248 @@ exports.getReportedUsers = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+
+
+//confirm public account (isPrivet:false)
+exports.confirmPublicAccount = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        user.isPrivet = false;
+        await user.save();
+        res.status(200).json({ message: 'Public account confirmed successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+//make it private (isPrivet:true)
+exports.makePrivateAccount = async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        user.isPrivet = true;
+        await user.save();
+        res.status(200).json({ message: 'Private account confirmed successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+//users can follow other users
+exports.followUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { requesterId } = req.body;
+        
+        // Validate that users aren't trying to follow themselves
+        if (userId === requesterId) {
+            return res.status(400).json({ message: 'You cannot follow yourself' });
+        }
+        
+        // Find both users
+        const userToFollow = await User.findById(userId);
+        const requester = await User.findById(requesterId);
+        
+        if (!userToFollow || !requester) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        // Check if requester is blocked
+        if (userToFollow.blockedUsers && userToFollow.blockedUsers.includes(requesterId)) {
+            return res.status(403).json({ message: 'You are blocked by this user' });
+        }
+        
+        // Check if already following
+        if (userToFollow.followers && userToFollow.followers.includes(requesterId)) {
+            return res.status(400).json({ message: 'You already follow this user' });
+        }
+        
+        // Check if there's already a pending request
+        if (userToFollow.followRequests && userToFollow.followRequests.includes(requesterId)) {
+            return res.status(400).json({ message: 'You already sent a follow request to this user' });
+        }
+        
+        // Handle private account follow requests - using "isPrivet" to match your database schema
+        if (userToFollow.isPrivet === true) {
+            // Initialize followRequests array if it doesn't exist
+            if (!userToFollow.followRequests) userToFollow.followRequests = [];
+            
+            // Add to follow requests
+            userToFollow.followRequests.push(requesterId);
+            await userToFollow.save();
+            
+            return res.status(200).json({ message: 'Follow request sent, awaiting confirmation' });
+        }
+        
+        // For public accounts, directly add to followers/following
+        if (!userToFollow.followers) userToFollow.followers = [];
+        if (!requester.following) requester.following = [];
+        
+        userToFollow.followers.push(requesterId);
+        requester.following.push(userId);
+        
+        await userToFollow.save();
+        await requester.save();
+        
+        res.status(200).json({ message: 'Followed successfully' });
+    } catch (error) {
+        console.error('Follow user error:', error);
+        res.status(500).json({ message: 'Internal server error', error: error.message });
+    }
+};
+
+
+//users can unfollow other users
+exports.unfollowUser = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { requesterId } = req.body;
+
+        if (userId === requesterId) {
+            return res.status(400).json({ message: 'You cannot unfollow yourself' });
+        }
+
+        const userToUnfollow = await User.findById(userId);
+        const requester = await User.findById(requesterId);
+
+        if (!userToUnfollow || !requester) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (userToUnfollow.blockedUsers.includes(requesterId)) {
+            return res.status(403).json({ message: 'You are blocked by this user' });
+        }
+
+        if (userToUnfollow.followers.includes(requesterId)) {
+            userToUnfollow.followers.pull(requesterId);
+            requester.following.pull(userId);
+            await userToUnfollow.save();
+            await requester.save();
+        }
+
+        res.status(200).json({ message: 'Unfollowed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error', error });
+    }
+};
+// Get followers details
+exports.getFollowers = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const user = await User.findById(userId).populate('followers', 'name email image');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.status(200).json({ followers: user.followers });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error', error });
+    }
+};
+
+// Get following details
+exports.getFollowing = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const user = await User.findById(userId).populate('following', 'name email image');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.status(200).json({ following: user.following });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error', error });
+    }
+};
+
+// Confirm follow request (for private accounts)
+exports.confirmFollowRequest = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { requesterId } = req.body;
+
+        const user = await User.findById(userId);
+        const requester = await User.findById(requesterId);
+
+        if (!user || !requester) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (!user.isPrivet) {
+            return res.status(400).json({ message: 'User account is not private' });
+        }
+
+        if (!user.followers.includes(requesterId)) {
+            user.followers.push(requesterId);
+            requester.following.push(userId);
+            await user.save();
+            await requester.save();
+        }
+
+        res.status(200).json({ message: 'Follow request confirmed' });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error', error });
+    }
+};
+
+
+//get follow requests
+exports.getFollowRequests = async (req, res) => {
+    try {
+        const { userId } = req.params; // The user whose follow requests we want to fetch
+        
+        const user = await User.findById(userId).populate({
+            path: 'followRequests',
+            select: 'name email phone image' // Fetch specific fields
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (!user.isPrivet) {
+            return res.status(400).json({ message: 'This user account is public' });
+        }
+
+        res.status(200).json({ followRequests: user.followRequests });
+    } catch (error) {
+        console.error('Error fetching follow requests:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+
+////remove pendingfollow request
+exports.removeFollowRequest = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const { requesterId } = req.body;
+
+        const user = await User.findById(userId);
+        const requester = await User.findById(requesterId);
+
+        if (!user || !requester) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.followRequests.includes(requesterId)) {
+            user.followRequests.pull(requesterId);
+            await user.save();
+        }
+
+        res.status(200).json({ message: 'Follow request removed' });
+    } catch (error) {
+        res.status(500).json({ message: 'Internal server error', error });
     }
 };

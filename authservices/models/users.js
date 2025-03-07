@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
-const { report } = require('../routes/admin');
 
 const userSchema = new mongoose.Schema({
     userId: { type: String, unique: true },
@@ -39,6 +38,10 @@ const userSchema = new mongoose.Schema({
     company: { type: String },
     religion: { type: String },
     isActive: { type: Boolean, default: true },
+    isPrivet:{type:Boolean,default:false},
+    followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    followRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     // List of blocked user IDs
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     reportedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]

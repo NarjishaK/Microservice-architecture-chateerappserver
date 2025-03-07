@@ -57,4 +57,27 @@ router.post('/report/user', Controller.reportUser);
 //get reported user list
 router.get('/reported-users/users', Controller.getReportedUsers); 
 
+//confirm public account (isPrivet:false)
+router.put('/confirm-public-account/:id', Controller.confirmPublicAccount);
+//confirm private account (isPrivet:true)
+router.put('/confirm-private-account/:id', Controller.makePrivateAccount);
+
+//users can follow other users
+router.post('/follow/:userId', Controller.followUser);
+//users can unfollow other users
+router.put('/unfollow/:userId', Controller.unfollowUser);
+
+
+//get follow details
+router.get('/follow-details/:userId', Controller.getFollowers);
+
+//get following details
+router.get('/following-details/:userId', Controller.getFollowing);
+
+//confirm follow request
+router.put('/confirm-follow/:userId', Controller.confirmFollowRequest);
+//get pendingfollow requests
+router.get('/follow-requests/:userId', Controller.getFollowRequests);
+//remove pendingfollow request
+router.delete('/remove-request/:userId', Controller.removeFollowRequest);
 module.exports = router;
