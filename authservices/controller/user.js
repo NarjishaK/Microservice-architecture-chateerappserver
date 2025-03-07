@@ -326,61 +326,6 @@ exports.verifyOTP = async (req, res) => {
 };
 
 
-//block user by id
-exports.blockUserById = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        user.isBlocked = true;
-        await user.save();
-        res.status(200).json({ message: 'User blocked successfully' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
-
-//unblock user by id
-exports.unblockUserById = async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        user.isBlocked = false;
-        await user.save();
-        res.status(200).json({ message: 'User unblocked successfully' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
-
-//all blocked users
-exports.getAllBlockedUsers = async (req, res) => {
-    try {
-        const blockedUsers = await User.find({ isBlocked: true });
-        res.status(200).json(blockedUsers);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
-
-//all unblocked users
-exports.getAllUnblockedUsers = async (req, res) => {
-    try {
-        const unblockedUsers = await User.find({ isBlocked: false });
-        res.status(200).json(unblockedUsers);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
-
-
 //report user by id
 exports.reportUserById = async (req, res) => {
     try {

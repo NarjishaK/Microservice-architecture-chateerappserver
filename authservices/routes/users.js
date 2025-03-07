@@ -40,16 +40,6 @@ router.post('/send-otp', Controller.sendOTP);
 router.post('/verify-otp', Controller.verifyOTP);
 router.post('/reset-password', Controller.resetPassword);
 
-//block user by id
-router.put('/block/:id', Controller.blockUserById);
-//unblock user by id
-router.put('/unblock/:id', Controller.unblockUserById);
-
-//get all blocked users
-router.get('/blocked/users', Controller.getAllBlockedUsers);
-
-//get all unblocked users
-router.get('/unblocked/users', Controller.getAllUnblockedUsers);
 //report user by id
 router.put('/report/:id', Controller.reportUserById);
 //unreport user by id
